@@ -1,0 +1,201 @@
+html, body {
+    margin: 0;
+    background: black;
+    color: white;
+    text-align: center;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+html.moving {
+    pointer-events: none;
+    cursor: move;
+}
+
+a {
+    color: skyblue;
+    /* text-decoration: none; */
+}
+
+#container {
+    position: relative;
+    margin: auto;
+    width: min-content;
+}
+#container img {
+    background: hotpink;
+}
+
+canvas {
+    box-shadow: 0 0 10px slategrey;
+}
+
+.corner {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    cursor: move;
+    filter: drop-shadow(0 0 10px skyblue);
+}
+.corner::before,
+.corner::after,
+.corner::before,
+.corner::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: yellow;
+}
+.corner.left::before {
+    width: 50%;
+    border-radius: 40px 0 0 40px;
+}
+.corner.right::before {
+    left: 50%;
+    width: 50%;
+    border-radius: 0 40px 40px 0;
+}
+.corner.top::after {
+    height: 50%;
+    border-radius: 40px 40px 0 0;
+}
+.corner.bottom::after {
+    top: 50%;
+    height: 50%;
+    border-radius: 0 0 40px 40px;
+}
+
+#grid {
+    position: absolute;
+    display: grid;
+    pointer-events: none;
+    filter: drop-shadow(0 0 3px black);
+}
+
+#grid div {
+    position: relative;
+    /* box-shadow: inset 0 0 0 1px black; */
+}
+
+#grid div::before,
+#grid div::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 50%;
+    height: 1px;
+    background: yellow;
+}
+#grid div::before {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+#grid div::after {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.point {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    transform: translate(-50%, -50%);
+    box-shadow: inset 0 0 0 10px orange;
+    cursor: move;
+}
+
+#line {
+    position: absolute;
+    filter: drop-shadow(0 0 3px black);
+    pointer-events: none;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+#line div {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    transform: translate(-50%, -50%);
+    border: 1px solid orange;
+}
+
+#line div::after {
+    position: relative;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: block;
+}
+#line div:nth-child(1):after {content: 'A';}
+#line div:nth-child(2):after {content: 'B';}
+#line div:nth-child(3):after {content: 'C';}
+#line div:nth-child(4):after {content: 'D';}
+#line div:nth-child(5):after {content: 'E';}
+#line div:nth-child(6):after {content: 'F';}
+#line div:nth-child(7):after {content: 'G';}
+#line div:nth-child(8):after {content: 'H';}
+#line div:nth-child(9):after {content: 'I';}
+#line div:nth-child(10):after {content: 'J';}
+#line div:nth-child(11):after {content: 'K';}
+#line div:nth-child(12):after {content: 'L';}
+#line div:nth-child(13):after {content: 'M';}
+#line div:nth-child(14):after {content: 'N';}
+#line div:nth-child(15):after {content: 'O';}
+#line div:nth-child(16):after {content: 'P';}
+#line div:nth-child(17):after {content: 'Q';}
+#line div:nth-child(18):after {content: 'R';}
+#line div:nth-child(19):after {content: 'S';}
+#line div:nth-child(20):after {content: 'T';}
+#line div:nth-child(21):after {content: 'U';}
+#line div:nth-child(22):after {content: 'V';}
+#line div:nth-child(23):after {content: 'W';}
+#line div:nth-child(24):after {content: 'X';}
+#line div:nth-child(25):after {content: 'Y';}
+#line div:nth-child(26):after {content: 'Z';}
+
+#w, #n {
+    position: absolute;
+    transform: translate(-50%, -50%);
+}
+
+input[type=number] {
+    width: 2.5em;
+    height: 1.5em;
+    font-size: 1em;
+    background: white;
+    font-weight: bold;
+    border: 0;
+    text-align: center;
+    border-radius: 20px;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#w.not-wide-enough {
+    color: red;
+    text-decoration: line-through;
+}
+
+#w-correction {
+    position: absolute;
+    font-size: 1em;
+    transform: translate(0, -50%) rotate(-15deg);
+    transform-origin: -1.5em;
+    margin-left: 1.5em;
+    pointer-events: none;
+    font-family: 'Comic Sans MS', cursive;
+}
+#w-correction::after {
+    content: attr(data-truecount);
+    color: lime;
+    font-weight: bold;
+}
+
+.gone {
+    display: none;
+}
