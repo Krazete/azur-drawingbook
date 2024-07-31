@@ -24,7 +24,9 @@ function convertToScrubber(input) {
     function onMouseMove(e) {
         var ex = 0;
         if (e.touches) {
-            e.preventDefault();
+            if (e.type != "touchstart") {
+                e.preventDefault();
+            }
             ex = e.touches[0].clientX;
         }
         else {

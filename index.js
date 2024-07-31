@@ -5,6 +5,8 @@ var mouse, id;
 
 var a, b, c, d, grid, line, w, n;
 
+var imgrect;
+
 var data = {
     a: {x: 0, y: 0},
     b: {x: 0, y: 0},
@@ -72,17 +74,17 @@ function updateGrid() {
     b.e.classList.remove("top");
     b.e.classList.add("bottom");
 
-    data.grid.e.style.left = l.x + "px";
-    data.grid.e.style.top = t.y + "px";
-    data.grid.e.style.width = r.x - l.x + "px";
-    data.grid.e.style.height = b.y - t.y + "px";
+    data.grid.e.style.left = l.x * 100 / imgrect.width + "%";
+    data.grid.e.style.top = t.y * 100 / imgrect.height + "%";
+    data.grid.e.style.width = (r.x - l.x) * 100 / imgrect.width + "%";
+    data.grid.e.style.height = (b.y - t.y) * 100 / imgrect.height + "%";
     data.grid.e.style.gridTemplateColumns = "repeat(" + count.x + ", 1fr)";
     if (oldCount != count.x * count.y) {
         data.grid.e.innerHTML = "<div></div>".repeat(count.x * count.y);
     }
 
-    data.w.e.style.left = (l.x + r.x) / 2 + "px";
-    data.w.e.style.top = t.y - 20 + "px";
+    data.w.e.style.left = ((l.x + r.x) / 2) * 100 / imgrect.width + "%";
+    data.w.e.style.top = (t.y - 20) * 100 / imgrect.height + "%";
 
     if (count.x == preferredCount) {
         data.w.e.classList.remove("not-wide-enough");
@@ -104,10 +106,10 @@ function updateLine(force) {
     rayX = data.c.x < data.d.x;
     rayY = data.c.y < data.d.y;
     
-    data.line.e.style.left = Math.min(data.c.x, data.d.x) + "px";
-    data.line.e.style.top = Math.min(data.c.y, data.d.y) + "px";
-    data.line.e.style.width = Math.abs(data.d.x - data.c.x) + "px";
-    data.line.e.style.height = Math.abs(data.d.y - data.c.y) + "px";
+    data.line.e.style.left = Math.min(data.c.x, data.d.x) * 100 / imgrect.width + "%";
+    data.line.e.style.top = Math.min(data.c.y, data.d.y) * 100 / imgrect.height + "%";
+    data.line.e.style.width = Math.abs(data.d.x - data.c.x) * 100 / imgrect.width + "%";
+    data.line.e.style.height = Math.abs(data.d.y - data.c.y) * 100 / imgrect.height + "%";
 
     if (force || oldRayX != rayX || oldRayY != rayY) {
         var nM1 = number - 1;
@@ -124,8 +126,8 @@ function updateLine(force) {
     var lx = (data.d.x - data.c.x);
     var ly = (data.d.y - data.c.y);
     var l = Math.sqrt(Math.pow(lx, 2) + Math.pow(ly, 2));
-    data.n.e.style.left = (data.c.x + data.d.x) / 2 - (Math.abs(m) < 1 ? ly : -ly) * 50 / l + "px";
-    data.n.e.style.top = (data.c.y + data.d.y) / 2 + (Math.abs(m) < 1 ? lx : -lx) * 50 / l + "px";
+    data.n.e.style.left = ((data.c.x + data.d.x) / 2 - (Math.abs(m) < 1 ? ly : -ly) * 50 / l) * 100 / imgrect.width + "%";
+    data.n.e.style.top = ((data.c.y + data.d.y) / 2 + (Math.abs(m) < 1 ? lx : -lx) * 50 / l) * 100 / imgrect.height + "%";
 }
 
 function updateW() {
@@ -152,14 +154,14 @@ function grabEnd(e) {
 
 function grabMove(e) {
     mouse = getPointer(e);
+    imgrect = img.getBoundingClientRect();
     if (id == "a" || id == "b" || id == "c" || id == "d") {
-        var imgrect = img.getBoundingClientRect();
         /* update data */
         data[id].x = bound(0, mouse.x - imgrect.x - scrollX, imgrect.width);
         data[id].y = bound(0, mouse.y - imgrect.y - scrollY, imgrect.height);
         /* update html */
-        data[id].e.style.left = data[id].x + "px";
-        data[id].e.style.top = data[id].y + "px";
+        data[id].e.style.left = data[id].x * 100 / imgrect.width + "%";
+        data[id].e.style.top = data[id].y * 100 / imgrect.height + "%";
         /* update dependent elements */
         if (id == "a" || id == "b") {
             updateGrid();
@@ -186,12 +188,18 @@ function updateImage(e) {
     console.log(this.width, this.height);
 }
 
+function onResize(e) {
+    img.width = innerWidth;
+    
+}
+
 /* initialization */
 
 function init() {
-    container = document.getElementById("container");
+    editor = document.getElementById("editor");
 
     img = document.getElementById("img");
+    img.width = innerWidth;
     img.addEventListener("load", updateImage);
 
     data.grid.e = document.getElementById("grid");
@@ -208,11 +216,12 @@ function init() {
     data.n.e.addEventListener("input", updateN);
 
     /* sample */
+    var temp = img.getBoundingClientRect();
     var dt = {
-        a: {x: 0, y: 0},
-        b: {x: innerWidth / 2, y: innerHeight},
-        c: {x: innerWidth, y: 0},
-        d: {x: innerWidth, y: innerHeight}
+        a: {x: temp.x + temp.width * 0.281, y: temp.y + temp.height * 0.17},
+        b: {x: temp.x + temp.width * 0.757, y: temp.y + temp.height * 0.78},
+        c: {x: temp.x + temp.width * 0.9, y: temp.y + temp.height * 0.11},
+        d: {x: temp.x + temp.width * 0.9, y: temp.y + temp.height * 0.89}
     };
     for (var i in dt) {
         id = i;
@@ -220,6 +229,8 @@ function init() {
     }
     data.w.e.dispatchEvent(new InputEvent("input"));
     data.n.e.dispatchEvent(new InputEvent("input"));
+
+    window.addEventListener("resize", onResize);
 }
 
 window.addEventListener("DOMContentLoaded", init);
