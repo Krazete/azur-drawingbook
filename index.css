@@ -16,24 +16,25 @@ a {
 
 /* editor */
 
-#editor {
+.editor {
     position: relative;
     width: 90%;
     margin: auto;
 }
 
-#editor > div {
+.editor > div {
     filter: drop-shadow(0 0 5px black);
 }
 
-#img {
+#image {
     width: 100%;
+    display: block;
 }
 
 /* handles */
 
 .corner,
-.point {
+.endpoint {
     position: absolute;
     width: 50px;
     height: 50px;
@@ -42,7 +43,7 @@ a {
     cursor: move;
     overflow: hidden;
 }
-.point {
+.endpoint {
     box-shadow: inset 0 0 0 15px cyan;
 }
 
@@ -154,7 +155,7 @@ a {
 #line div:nth-child(25)::after {content: 'Y';}
 #line div:nth-child(26)::after {content: 'Z';}
 
-/* number inputs */
+/* dials */
 
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
@@ -176,19 +177,19 @@ input[type=number]::-webkit-outer-spin-button {
     border-radius: 10px;
     box-shadow: inset 0 0 4px 1px black;
 }
-#w {
+#gc {
     background: yellow;
 }
-#w.not-wide-enough {
+#gc.not-wide-enough {
     background: red;
     font-weight: normal;
     text-decoration: line-through;
 }
-#n {
+#lc {
     background: cyan;
 }
 
-#w-correction {
+#gc-bound {
     background: yellow;
     color: black;
     font-family: 'Comic Sans MS', cursive; /* todo: check */
@@ -204,10 +205,10 @@ input[type=number]::-webkit-outer-spin-button {
     border-radius: 5px;
     pointer-events: none;
 }
-#w-correction.gone {
+#gc-bound.hidden {
     display: none;
 }
 
-#w-correction::after {
+#gc-bound::after {
     content: attr(data-truecount);
 }
