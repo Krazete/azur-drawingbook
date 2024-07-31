@@ -54,7 +54,7 @@ function convertToScrubber(input) {
         }
         if (i1 != i2) {
             input.value = i1;
-            input.dispatchEvent(new InputEvent("input"));
+            input.dispatchEvent(new InputEvent("change"));
         }
         i2 = i1;
     }

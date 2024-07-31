@@ -212,8 +212,8 @@ function init() {
         data[idea].e.addEventListener("mousedown", grabStart);
         data[idea].e.addEventListener("touchstart", grabStart);
     }
-    data.w.e.addEventListener("input", updateW);
-    data.n.e.addEventListener("input", updateN);
+    data.w.e.addEventListener("change", updateW);
+    data.n.e.addEventListener("change", updateN);
 
     /* sample */
     var temp = img.getBoundingClientRect();
@@ -227,8 +227,8 @@ function init() {
         id = i;
         grabMove({clientX: dt[i].x, clientY: dt[i].y, preventDefault: ()=>{}});
     }
-    data.w.e.dispatchEvent(new InputEvent("input"));
-    data.n.e.dispatchEvent(new InputEvent("input"));
+    data.w.e.dispatchEvent(new InputEvent("change"));
+    data.n.e.dispatchEvent(new InputEvent("change"));
 
     window.addEventListener("resize", onResize);
 }
