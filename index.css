@@ -14,12 +14,49 @@ a {
     color: skyblue;
 }
 
+/* menu */
+
+.menu {
+    width: 90%;
+    display: flex;
+    margin: auto;
+}
+
+.menu > div {
+    box-shadow: 0 0 10px white;
+    margin: 10px;
+    border-radius: 20px;
+}
+
+#preview {
+    min-width: 100%;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+}
+
+/* loaders */
+
+#load-file,
+#load-url {
+    background: white;
+    color: black;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    margin: 0;
+}
+
+.invalid {
+    background: red;
+}
+
 /* editor */
 
 .editor {
     position: relative;
     width: 90%;
     margin: auto;
+    margin-bottom: 50px;
 }
 
 .editor > div {
@@ -29,6 +66,8 @@ a {
 #image {
     width: 100%;
     display: block;
+    /* image-rendering: crisp-edges; */
+    /* image-rendering: pixelated; */
 }
 
 /* handles */

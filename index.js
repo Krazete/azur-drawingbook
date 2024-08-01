@@ -1,14 +1,11 @@
 var image, gcBound, grid, line;
-var handle, dial;
-
-var page = {};
-var palette = {};
+var loader, handle, dial;
+var preview;
 
 var id;
-
 var imgrect;
-
 var rayX, rayY;
+var imgdata;
 
 /* helpers */
 
@@ -32,9 +29,40 @@ function getPointer(e) {
 
 /* updaters */
 
+function updatePreview() {
+    if (!imgdata) {
+        return;
+    }
+    preview.width = dial.gc.cBound;
+    preview.height = dial.gc.r;
+    var context = preview.getContext("2d");
+    var x0 = imgdata.width * Math.min(handle.ga.x, handle.gb.x);
+    var y0 = imgdata.height * Math.min(handle.ga.y, handle.gb.y);
+    var w0 = imgdata.width * Math.abs(handle.gb.x - handle.ga.x);
+    var h0 = imgdata.height * Math.abs(handle.gb.y - handle.ga.y);
+
+    var newdata = context.createImageData(dial.gc.cBound, dial.gc.r);
+    for (var r = 0; r < dial.gc.r; r++) {
+        for (var c = 0; c < dial.gc.cBound; c++) {
+            var x = Math.round(x0 + w0 * (c + 0.5) / dial.gc.cBound);
+            var y = Math.round(y0 + h0 * (r + 0.5) / dial.gc.r);
+            var i = imgdata.width * y + x;
+            var j = dial.gc.cBound * r + c;
+            newdata.data[4 * j] = imgdata.data[4 * i];
+            newdata.data[4 * j + 1] = imgdata.data[4 * i + 1];
+            newdata.data[4 * j + 2] = imgdata.data[4 * i + 2];
+            newdata.data[4 * j + 3] = imgdata.data[4 * i + 3];
+        }
+    }
+    context.putImageData(newdata, 0, 0);
+}
+
 function updateGrid() {
+    if (!imgrect) {
+        return;
+    }
     var l, r, t, b;
-    var minPixels = 10 / devicePixelRatio;
+    var minPixels = 5 / devicePixelRatio;
     var oldCount = dial.gc.cBound * dial.gc.r;
 
     if (handle.ga.x < handle.gb.x) {
@@ -88,9 +116,14 @@ function updateGrid() {
         gcBound.style.top = dial.gc.e.style.top;
         gcBound.dataset.truecount = dial.gc.cBound;
     }
+
+    updatePreview();
 }
 
 function updateLine(force) {
+    if (!imgrect) {
+        return;
+    }
     var oldRayX = rayX;
     var oldRayY = rayY;
 
@@ -119,6 +152,8 @@ function updateLine(force) {
     var l = Math.sqrt(Math.pow(lx, 2) + Math.pow(ly, 2));
     dial.lc.e.style.left = 100 * ((handle.la.x + handle.lb.x) / 2 - (Math.abs(m) < 1 ? ly : -ly) * 0.05 / l) + "%";
     dial.lc.e.style.top = 100 * ((handle.la.y + handle.lb.y) / 2 + (Math.abs(m) < 1 ? lx : -lx) * 0.05 / l) + "%";
+
+    updatePreview();
 }
 
 function updateDial() {
@@ -153,17 +188,64 @@ function grabStart(e) {
     id = this.id;
     imgrect = image.getBoundingClientRect();
     grabMove(e);
-    document.documentElement.classList.add("moving");
-    window.addEventListener("mousemove", grabMove);
-    window.addEventListener("touchmove", grabMove, {"passive": false});
-    window.addEventListener("mouseup", grabEnd);
-    window.addEventListener("touchend", grabEnd);
+    if (e.isTrusted) {
+        document.documentElement.classList.add("moving");
+        window.addEventListener("mousemove", grabMove);
+        window.addEventListener("touchmove", grabMove, {"passive": false});
+        window.addEventListener("mouseup", grabEnd);
+        window.addEventListener("touchend", grabEnd);
+    }
 }
 
 /* image loading */
 
-function updateImage(e) {
-    console.log(this.width, this.height);
+function updateImgRect() {
+    imgrect = image.getBoundingClientRect();
+    updateGrid();
+    updatePreview();
+}
+
+function invalid() {
+    this.classList.add("invalid");
+    console.log(this);
+}
+
+function valid() {
+    // this.classList.remove("invalid");
+    var canvas = document.createElement("canvas");
+    canvas.width = this.width;
+    canvas.height = this.height;
+    var context = canvas.getContext("2d");
+    context.crossOrigin = "anonymous";
+    context.drawImage(this, 0, 0);
+    try {
+        imgdata = context.getImageData(0, 0, this.width, this.height);
+        image.src = this.src;
+    }
+    catch (e) {
+        console.log(e);
+    }
+}
+
+function loadURL() {
+    var checker = new Image();
+    checker.crossOrigin = "Anonymous";
+    checker.addEventListener("load", valid);
+    checker.addEventListener("error", invalid);
+    checker.src = this.value || this.result;
+}
+
+function loadFile() {
+    var file = this.files[0];
+    if (file && file.type && file.type.startsWith("image/")) {
+        var reader = new FileReader();
+        reader.addEventListener("load", loadURL);
+        reader.addEventListener("error", invalid);
+        reader.readAsDataURL(file);
+    }
+    else {
+        invalid();
+    }
 }
 
 function onResize(e) {
@@ -175,35 +257,30 @@ function onResize(e) {
 
 function initSample() {
     function pD() {}
-    imgrect = image.getBoundingClientRect();
-    var click = {
-        ga: {
-            clientX: imgrect.x + imgrect.width * 0.282,
-            clientY: imgrect.y + imgrect.height * 0.171,
-            preventDefault: pD
-        },
-        gb: {
-            clientX: imgrect.x + imgrect.width * 0.758,
-            clientY: imgrect.y + imgrect.height * 0.786,
-            preventDefault: pD
-        },
-        la: {
-            clientX: imgrect.x + imgrect.width * 0.9,
-            clientY: imgrect.y + imgrect.height * 0.11,
-            preventDefault: pD
-        },
-        lb: {
-            clientX: imgrect.x + imgrect.width * 0.9,
-            clientY: imgrect.y + imgrect.height * 0.9,
-            preventDefault: pD
-        }
-    };
-    for (var i in click) {
-        id = i;
-        grabMove(click[i]);
-    }
+
+    handle.ga.x = 0.282;
+    handle.ga.y = 0.171;
+    handle.gb.x = 0.758;
+    handle.gb.y = 0.786;
+    handle.la.x = 0.9;
+    handle.la.y = 0.11;
+    handle.lb.x = 0.9;
+    handle.lb.y = 0.9;
+
+    handle.ga.e.style.left = 100 * handle.ga.x + "%";
+    handle.ga.e.style.top = 100 * handle.ga.y + "%";
+    handle.gb.e.style.left = 100 * handle.gb.x + "%";
+    handle.gb.e.style.top = 100 * handle.gb.y + "%";
+    handle.la.e.style.left = 100 * handle.la.x + "%";
+    handle.la.e.style.top = 100 * handle.la.y + "%";
+    handle.lb.e.style.left = 100 * handle.lb.x + "%";
+    handle.lb.e.style.top = 100 * handle.lb.y + "%";
+
     dial.gc.e.dispatchEvent(new InputEvent("change"));
     dial.lc.e.dispatchEvent(new InputEvent("change"));
+
+    loader.url.e.value = "sample.jpg";
+    loader.url.e.dispatchEvent(new InputEvent("change"));
 }
 
 function init() {
@@ -221,14 +298,22 @@ function init() {
         gc: {e: document.getElementById("gc"), f: updateGrid},
         lc: {e: document.getElementById("lc"), f: updateLine}
     };
+    loader = {
+        file: {e: document.getElementById("load-file"), f: loadFile},
+        url: {e: document.getElementById("load-url"), f: loadURL}
+    };
+    preview = document.getElementById("preview");
 
-    image.addEventListener("load", updateImage);
+    image.addEventListener("load", updateImgRect);
     for (var id in handle) {
         handle[id].e.addEventListener("mousedown", grabStart);
         handle[id].e.addEventListener("touchstart", grabStart);
     }
     for (var id in dial) {
         dial[id].e.addEventListener("change", updateDial);
+    }
+    for (var id in loader) {
+        loader[id].e.addEventListener("change", loader[id].f);
     }
     // window.addEventListener("resize", onResize);
 
@@ -305,7 +390,7 @@ window.addEventListener("DOMContentLoaded", init);
 //     txt += "|";
 //     for (var x = gap.x / 2; x < data.width; x += gap.x) {
 //         var i = 4 * (data.width * Math.round(y) + Math.round(x));
-//         txt += getClosestPaint(handle.lbata[i], handle.lbata[i + 1], handle.lbata[i + 2]);
+//         txt += getClosestPaint(data.data[i], data.data[i + 1], data.data[i + 2]);
 //     }
 //     txt += "\n";
 // }
