@@ -24,14 +24,26 @@ a {
 
 .menu > div {
     box-shadow: 0 0 10px white;
+    flex: 1;
     margin: 10px;
     border-radius: 20px;
 }
 
-#preview {
-    min-width: 100%;
+#preview,
+#palette {
     image-rendering: crisp-edges;
     image-rendering: pixelated;
+    display: block;
+    margin: auto;
+}
+
+#preview {
+    height: 200px;
+    filter: drop-shadow(0 0 3px white);
+}
+#palette {
+    width: 90%;
+    height: 5px;
 }
 
 /* loaders */

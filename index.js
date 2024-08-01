@@ -1,6 +1,6 @@
 var image, gcBound, grid, line;
 var loader, handle, dial;
-var preview;
+var preview, palette, output;
 
 var id;
 var imgrect;
@@ -27,7 +27,9 @@ function getPointer(e) {
     };
 }
 
-/* updaters */
+/* menu updaters */
+
+var txt;
 
 function updatePreview() {
     if (!imgdata) {
@@ -41,21 +43,93 @@ function updatePreview() {
     var w0 = imgdata.width * Math.abs(handle.gb.x - handle.ga.x);
     var h0 = imgdata.height * Math.abs(handle.gb.y - handle.ga.y);
 
+    txt = "";
     var newdata = context.createImageData(dial.gc.cBound, dial.gc.r);
     for (var r = 0; r < dial.gc.r; r++) {
+        txt += "|"
         for (var c = 0; c < dial.gc.cBound; c++) {
             var x = Math.round(x0 + w0 * (c + 0.5) / dial.gc.cBound);
             var y = Math.round(y0 + h0 * (r + 0.5) / dial.gc.r);
             var i = imgdata.width * y + x;
             var j = dial.gc.cBound * r + c;
-            newdata.data[4 * j] = imgdata.data[4 * i];
-            newdata.data[4 * j + 1] = imgdata.data[4 * i + 1];
-            newdata.data[4 * j + 2] = imgdata.data[4 * i + 2];
-            newdata.data[4 * j + 3] = imgdata.data[4 * i + 3];
+            var thisColor = {
+                r: imgdata.data[4 * i],
+                g: imgdata.data[4 * i + 1],
+                b: imgdata.data[4 * i + 2],
+                a: imgdata.data[4 * i + 3]
+            };
+            if (colors.length) {
+                var closestColor = getPaletteColor(thisColor);
+            }
+            else {
+                var closestColor = thisColor;
+            }
+            newdata.data[4 * j] = closestColor.r;
+            newdata.data[4 * j + 1] = closestColor.g;
+            newdata.data[4 * j + 2] = closestColor.b;
+            newdata.data[4 * j + 3] = closestColor.a;
+            txt += String.fromCharCode(closestColor.c + 97);
         }
+        txt += "\n";
     }
     context.putImageData(newdata, 0, 0);
+    output.value = txt;
 }
+
+var colors = [];
+
+function getPaletteColor(k) {
+    var score = Infinity;
+    var chosen;
+    for (var c of colors) {
+        var s = Math.pow(c.r - k.r, 2)
+              + Math.pow(c.g - k.g, 2)
+              + Math.pow(c.b - k.b, 2)
+              + Math.pow(c.a - k.a, 2);
+        if (s < score) {
+            score = s;
+            chosen = c;
+        }
+    }
+    var tolerance = 32;
+    if (score > 4 * Math.pow(tolerance, 2)) {
+        chosen = {r: 0, g: 0, b: 0, a: 0, c: -65};
+    }
+    return chosen;
+}
+
+function updatePalette() {
+    palette.width = dial.lc.c;
+    palette.height = 1;
+    var context = palette.getContext("2d");
+    var x0 = imgdata.width * handle.la.x;
+    var y0 = imgdata.height * handle.la.y;
+    var w0 = imgdata.width * (handle.lb.x - handle.la.x);
+    var h0 = imgdata.height * (handle.lb.y - handle.la.y);
+
+    var newdata = context.createImageData(dial.lc.c, 1);
+    colors = [];
+    for (var c = 0; c < dial.lc.c; c++) {
+        var x = Math.round(x0 + w0 * c / (dial.lc.c - 1));
+        var y = Math.round(y0 + h0 * c / (dial.lc.c - 1));
+        var i = imgdata.width * y + x;
+        colors[c] = {
+            r: imgdata.data[4 * i],
+            g: imgdata.data[4 * i + 1],
+            b: imgdata.data[4 * i + 2],
+            a: imgdata.data[4 * i + 3],
+            c: c
+        };
+        newdata.data[4 * c] = imgdata.data[4 * i];
+        newdata.data[4 * c + 1] = imgdata.data[4 * i + 1];
+        newdata.data[4 * c + 2] = imgdata.data[4 * i + 2];
+        newdata.data[4 * c + 3] = imgdata.data[4 * i + 3];
+    }
+    context.putImageData(newdata, 0, 0);
+    updatePreview();
+}
+
+/* editor updaters */
 
 function updateGrid() {
     if (!imgrect) {
@@ -153,7 +227,7 @@ function updateLine(force) {
     dial.lc.e.style.left = 100 * ((handle.la.x + handle.lb.x) / 2 - (Math.abs(m) < 1 ? ly : -ly) * 0.05 / l) + "%";
     dial.lc.e.style.top = 100 * ((handle.la.y + handle.lb.y) / 2 + (Math.abs(m) < 1 ? lx : -lx) * 0.05 / l) + "%";
 
-    updatePreview();
+    updatePalette();
 }
 
 function updateDial() {
@@ -202,7 +276,8 @@ function grabStart(e) {
 function updateImgRect() {
     imgrect = image.getBoundingClientRect();
     updateGrid();
-    updatePreview();
+    updateLine();
+    // updatePreview();
 }
 
 function invalid() {
@@ -283,6 +358,7 @@ function initSample() {
     loader.url.e.dispatchEvent(new InputEvent("change"));
 }
 
+var pk;
 function init() {
     image = document.getElementById("image");
     gcBound = document.getElementById("gc-bound");
@@ -303,7 +379,12 @@ function init() {
         url: {e: document.getElementById("load-url"), f: loadURL}
     };
     preview = document.getElementById("preview");
+    palette = document.getElementById("palette");
+    output = document.getElementById("output");
 
+    // grid.addEventListener("click", function (e) {
+    //     pk = e.target;
+    // });
     image.addEventListener("load", updateImgRect);
     for (var id in handle) {
         handle[id].e.addEventListener("mousedown", grabStart);
