@@ -35,6 +35,7 @@ function updatePreview() {
     if (!imgdata) {
         return;
     }
+    var cc = {};
     preview.width = dial.gc.cBound;
     preview.height = dial.gc.r;
     var context = preview.getContext("2d");
@@ -43,10 +44,13 @@ function updatePreview() {
     var w0 = imgdata.width * Math.abs(handle.gb.x - handle.ga.x);
     var h0 = imgdata.height * Math.abs(handle.gb.y - handle.ga.y);
 
-    txt = "";
+    txt = "{{DrawingBook\n";
+    for (var c in colors) {
+        txt += "|" + String.fromCharCode(colors[c].c + 97) + "=rgb(" + [colors[c].r, colors[c].g, colors[c].b].join(", ") + ")\n";
+    }
     var newdata = context.createImageData(dial.gc.cBound, dial.gc.r);
     for (var r = 0; r < dial.gc.r; r++) {
-        txt += "|"
+        txt += "|";
         for (var c = 0; c < dial.gc.cBound; c++) {
             var x = Math.round(x0 + w0 * (c + 0.5) / dial.gc.cBound);
             var y = Math.round(y0 + h0 * (r + 0.5) / dial.gc.r);
@@ -69,9 +73,13 @@ function updatePreview() {
             newdata.data[4 * j + 2] = closestColor.b;
             newdata.data[4 * j + 3] = closestColor.a;
             txt += String.fromCharCode(closestColor.c + 97);
+            if (colors.includes(closestColor)) {
+                palette.children[colors.indexOf(closestColor)].innerHTML = parseInt(palette.children[colors.indexOf(closestColor)].innerHTML || 0) + 1;
+            }
         }
         txt += "\n";
     }
+    txt += "}}\n";
     context.putImageData(newdata, 0, 0);
     output.value = txt;
 }
@@ -99,15 +107,11 @@ function getPaletteColor(k) {
 }
 
 function updatePalette() {
-    palette.width = dial.lc.c;
-    palette.height = 1;
-    var context = palette.getContext("2d");
     var x0 = imgdata.width * handle.la.x;
     var y0 = imgdata.height * handle.la.y;
     var w0 = imgdata.width * (handle.lb.x - handle.la.x);
     var h0 = imgdata.height * (handle.lb.y - handle.la.y);
 
-    var newdata = context.createImageData(dial.lc.c, 1);
     colors = [];
     for (var c = 0; c < dial.lc.c; c++) {
         var x = Math.round(x0 + w0 * c / (dial.lc.c - 1));
@@ -120,12 +124,9 @@ function updatePalette() {
             a: imgdata.data[4 * i + 3],
             c: c
         };
-        newdata.data[4 * c] = imgdata.data[4 * i];
-        newdata.data[4 * c + 1] = imgdata.data[4 * i + 1];
-        newdata.data[4 * c + 2] = imgdata.data[4 * i + 2];
-        newdata.data[4 * c + 3] = imgdata.data[4 * i + 3];
     }
-    context.putImageData(newdata, 0, 0);
+    palette.innerHTML = colors.map(e => "<div style=\"background:rgba(" + [e.r, e.g, e.b, e.a].join(",") + ")\"></div>").join("");
+    // palette.style.background = "linear-gradient(" + colors.map((e, i) => "rgba(" + [e.r, e.g, e.b, e.a].join(",") + ") " + i*100/colors.length + "%" + " " + (i + 1)*100/colors.length + "%").join(",") + ")";
     updatePreview();
 }
 
