@@ -42,7 +42,7 @@ a {
     filter: drop-shadow(0 0 5px black);
 }
 
-#image {
+#shot {
     width: 100%;
     display: block;
 }
@@ -289,7 +289,7 @@ input[type=number]::-webkit-outer-spin-button {
     height: 100%;
 }
 
-#output {
+#result {
     color: darkviolet;
     font-family: 'Courier New', Courier, monospace;
     font-weight: bold;

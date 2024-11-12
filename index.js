@@ -1,11 +1,25 @@
-var image, gcBound, grid, line;
-var loader, handle, dial;
-var preview, palette, output;
+var handle = {};
+var dial = {};
+var data = {
+    ga: {f: updateGrid, x: 0.282, y: 0.171},
+    gb: {f: updateGrid, x: 0.758, y: 0.786},
+    gc: {f: updateGrid, c: 37, cBound: 37},
+    la: {f: updateLine, x: 0.9, y: 0.11},
+    lb: {f: updateLine, x: 0.9, y: 0.9},
+    lc: {f: updateLine, c: 9},
+};
+
+var shot, gcBound, grid, line;
+var loader;
+var preview, palette, result;
 
 var id;
-var imgrect;
+var shotBox;
 var rayX, rayY;
-var imgdata;
+
+var txt;
+var colors = [];
+var shotData;
 
 /* helpers */
 
@@ -29,38 +43,35 @@ function getPointer(e) {
 
 /* menu updaters */
 
-var txt;
-
 function updatePreview() {
-    if (!imgdata) {
+    if (!shotData) {
         return;
     }
-    var cc = {};
-    preview.width = dial.gc.cBound;
-    preview.height = dial.gc.r;
+    preview.width = data.gc.cBound;
+    preview.height = data.gc.r;
     var context = preview.getContext("2d");
-    var x0 = imgdata.width * Math.min(handle.ga.x, handle.gb.x);
-    var y0 = imgdata.height * Math.min(handle.ga.y, handle.gb.y);
-    var w0 = imgdata.width * Math.abs(handle.gb.x - handle.ga.x);
-    var h0 = imgdata.height * Math.abs(handle.gb.y - handle.ga.y);
+    var x0 = shotData.width * Math.min(data.ga.x, data.gb.x);
+    var y0 = shotData.height * Math.min(data.ga.y, data.gb.y);
+    var w0 = shotData.width * Math.abs(data.gb.x - data.ga.x);
+    var h0 = shotData.height * Math.abs(data.gb.y - data.ga.y);
 
     txt = "{{DrawingBook\n";
     for (var c in colors) {
         txt += "|" + String.fromCharCode(colors[c].c + 97) + "=rgb(" + [colors[c].r, colors[c].g, colors[c].b].join(", ") + ")\n";
     }
-    var newdata = context.createImageData(dial.gc.cBound, dial.gc.r);
-    for (var r = 0; r < dial.gc.r; r++) {
+    var newdata = context.createImageData(data.gc.cBound, data.gc.r);
+    for (var r = 0; r < data.gc.r; r++) {
         txt += "|";
-        for (var c = 0; c < dial.gc.cBound; c++) {
-            var x = Math.round(x0 + w0 * (c + 0.5) / dial.gc.cBound);
-            var y = Math.round(y0 + h0 * (r + 0.5) / dial.gc.r);
-            var i = imgdata.width * y + x;
-            var j = dial.gc.cBound * r + c;
+        for (var c = 0; c < data.gc.cBound; c++) {
+            var x = Math.round(x0 + w0 * (c + 0.5) / data.gc.cBound);
+            var y = Math.round(y0 + h0 * (r + 0.5) / data.gc.r);
+            var i = shotData.width * y + x;
+            var j = data.gc.cBound * r + c;
             var thisColor = {
-                r: imgdata.data[4 * i],
-                g: imgdata.data[4 * i + 1],
-                b: imgdata.data[4 * i + 2],
-                a: imgdata.data[4 * i + 3]
+                r: shotData.data[4 * i],
+                g: shotData.data[4 * i + 1],
+                b: shotData.data[4 * i + 2],
+                a: shotData.data[4 * i + 3]
             };
             if (colors.length) {
                 var closestColor = getPaletteColor(thisColor);
@@ -81,10 +92,8 @@ function updatePreview() {
     }
     txt += "}}\n";
     context.putImageData(newdata, 0, 0);
-    output.value = txt;
+    result.value = txt;
 }
-
-var colors = [];
 
 function getPaletteColor(k) {
     var score = Infinity;
@@ -107,113 +116,112 @@ function getPaletteColor(k) {
 }
 
 function updatePalette() {
-    var x0 = imgdata.width * handle.la.x;
-    var y0 = imgdata.height * handle.la.y;
-    var w0 = imgdata.width * (handle.lb.x - handle.la.x);
-    var h0 = imgdata.height * (handle.lb.y - handle.la.y);
+    var x0 = shotData.width * data.la.x;
+    var y0 = shotData.height * data.la.y;
+    var w0 = shotData.width * (data.lb.x - data.la.x);
+    var h0 = shotData.height * (data.lb.y - data.la.y);
 
     colors = [];
-    for (var c = 0; c < dial.lc.c; c++) {
-        var x = Math.round(x0 + w0 * c / (dial.lc.c - 1));
-        var y = Math.round(y0 + h0 * c / (dial.lc.c - 1));
-        var i = imgdata.width * y + x;
+    for (var c = 0; c < data.lc.c; c++) {
+        var x = Math.round(x0 + w0 * c / (data.lc.c - 1));
+        var y = Math.round(y0 + h0 * c / (data.lc.c - 1));
+        var i = shotData.width * y + x;
         colors[c] = {
-            r: imgdata.data[4 * i],
-            g: imgdata.data[4 * i + 1],
-            b: imgdata.data[4 * i + 2],
-            a: imgdata.data[4 * i + 3],
+            r: shotData.data[4 * i],
+            g: shotData.data[4 * i + 1],
+            b: shotData.data[4 * i + 2],
+            a: shotData.data[4 * i + 3],
             c: c
         };
     }
     palette.innerHTML = colors.map(e => "<div style=\"background:rgba(" + [e.r, e.g, e.b, e.a].join(",") + ")\"></div>").join("");
-    // palette.style.background = "linear-gradient(" + colors.map((e, i) => "rgba(" + [e.r, e.g, e.b, e.a].join(",") + ") " + i*100/colors.length + "%" + " " + (i + 1)*100/colors.length + "%").join(",") + ")";
     updatePreview();
 }
 
 /* editor updaters */
 
 function updateGrid() {
-    if (!imgrect) {
+    if (!shotBox) {
         return;
     }
     var l, r, t, b;
     var minPixels = 5 / devicePixelRatio;
-    var oldCount = dial.gc.cBound * dial.gc.r;
+    var oldCount = data.gc.cBound * data.gc.r;
 
-    if (handle.ga.x < handle.gb.x) {
-        l = handle.ga;
-        r = handle.gb;
+    if (data.ga.x < data.gb.x) {
+        l = "ga";
+        r = "gb";
     }
     else {
-        l = handle.gb;
-        r = handle.ga;
+        l = "gb";
+        r = "ga";
     }
-    if (handle.ga.y < handle.gb.y) {
-        t = handle.ga;
-        b = handle.gb;
+    if (data.ga.y < data.gb.y) {
+        t = "ga";
+        b = "gb";
     }
     else {
-        t = handle.gb;
-        b = handle.ga;
+        t = "gb";
+        b = "ga";
     }
-    dial.gc.cBound = bound(Math.round((r.x - l.x) * imgrect.width / minPixels), 1, dial.gc.c);
-    dial.gc.r = bound(Math.round(dial.gc.cBound * (b.y - t.y) * imgrect.height / ((r.x - l.x) * imgrect.width)), 1, 64);
+    data.gc.cBound = bound(Math.round((data[r].x - data[l].x) * shotBox.width / minPixels), 1, data.gc.c);
+    data.gc.r = bound(Math.round(data.gc.cBound * (data[b].y - data[t].y) * shotBox.height / ((data[r].x - data[l].x) * shotBox.width)), 1, 64);
 
-    l.e.classList.remove("right");
-    l.e.classList.add("left");
-    r.e.classList.remove("left");
-    r.e.classList.add("right");
-    t.e.classList.remove("bottom");
-    t.e.classList.add("top");
-    b.e.classList.remove("top");
-    b.e.classList.add("bottom");
+    handle[l].classList.remove("right");
+    handle[l].classList.add("left");
+    handle[r].classList.remove("left");
+    handle[r].classList.add("right");
+    handle[t].classList.remove("bottom");
+    handle[t].classList.add("top");
+    handle[b].classList.remove("top");
+    handle[b].classList.add("bottom");
 
-    grid.style.left = 100 * l.x + "%";
-    grid.style.top = 100 * t.y + "%";
-    grid.style.width = 100 * (r.x - l.x) + "%";
-    grid.style.height = 100 * (b.y - t.y) + "%";
-    grid.style.gridTemplateColumns = "repeat(" + dial.gc.cBound + ", 1fr)";
-    if (oldCount != dial.gc.cBound * dial.gc.r) {
-        grid.innerHTML = "<div></div>".repeat(dial.gc.cBound * dial.gc.r);
+    grid.style.left = 100 * data[l].x + "%";
+    grid.style.top = 100 * data[t].y + "%";
+    grid.style.width = 100 * (data[r].x - data[l].x) + "%";
+    grid.style.height = 100 * (data[b].y - data[t].y) + "%";
+    grid.style.gridTemplateColumns = "repeat(" + data.gc.cBound + ", 1fr)";
+    if (oldCount != data.gc.cBound * data.gc.r) {
+        grid.innerHTML = "<div></div>".repeat(data.gc.cBound * data.gc.r);
     }
 
-    dial.gc.e.style.left = 100 * ((l.x + r.x) / 2) + "%";
-    dial.gc.e.style.top = 100 * (t.y - 0.05) + "%";
+    dial.gc.style.left = 100 * ((data[l].x + data[r].x) / 2) + "%";
+    dial.gc.style.top = 100 * (data[t].y - 0.05) + "%";
 
-    if (dial.gc.cBound == dial.gc.c) {
-        dial.gc.e.classList.remove("not-wide-enough");
+    if (data.gc.cBound == data.gc.c) {
+        dial.gc.classList.remove("not-wide-enough");
         gcBound.classList.add("hidden");
     }
     else {
-        dial.gc.e.classList.add("not-wide-enough");
+        dial.gc.classList.add("not-wide-enough");
         gcBound.classList.remove("hidden");
-        gcBound.style.left = dial.gc.e.style.left;
-        gcBound.style.top = dial.gc.e.style.top;
-        gcBound.dataset.truecount = dial.gc.cBound;
+        gcBound.style.left = dial.gc.style.left;
+        gcBound.style.top = dial.gc.style.top;
+        gcBound.dataset.truecount = data.gc.cBound;
     }
 
     updatePreview();
 }
 
 function updateLine(force) {
-    if (!imgrect) {
+    if (!shotBox) {
         return;
     }
     var oldRayX = rayX;
     var oldRayY = rayY;
 
-    rayX = handle.la.x < handle.lb.x;
-    rayY = handle.la.y < handle.lb.y;
+    rayX = data.la.x < data.lb.x;
+    rayY = data.la.y < data.lb.y;
     
-    line.style.left = 100 * Math.min(handle.la.x, handle.lb.x) + "%";
-    line.style.top = 100 * Math.min(handle.la.y, handle.lb.y) + "%";
-    line.style.width = 100 * Math.abs(handle.lb.x - handle.la.x) + "%";
-    line.style.height = 100 * Math.abs(handle.lb.y - handle.la.y) + "%";
+    line.style.left = 100 * Math.min(data.la.x, data.lb.x) + "%";
+    line.style.top = 100 * Math.min(data.la.y, data.lb.y) + "%";
+    line.style.width = 100 * Math.abs(data.lb.x - data.la.x) + "%";
+    line.style.height = 100 * Math.abs(data.lb.y - data.la.y) + "%";
 
     if (force || oldRayX != rayX || oldRayY != rayY) {
-        var nM1 = dial.lc.c - 1;
+        var nM1 = data.lc.c - 1;
         line.innerHTML = "";
-        for (var i = 0; i < dial.lc.c; i++) {
+        for (var i = 0; i < data.lc.c; i++) {
             var letter = document.createElement("div");
             letter.style.left = 100 * (rayX ? i : (nM1 - i)) / nM1 + "%";
             letter.style.top = 100 * (rayY ? i : (nM1 - i)) / nM1 + "%";
@@ -221,25 +229,25 @@ function updateLine(force) {
         }
     }
 
-    var m = ((handle.lb.y - handle.la.y) * imgrect.height) / ((handle.lb.x - handle.la.x) * imgrect.width);
-    var lx = (handle.lb.x - handle.la.x) * imgrect.width;
-    var ly = (handle.lb.y - handle.la.y) * imgrect.height;
+    var m = ((data.lb.y - data.la.y) * shotBox.height) / ((data.lb.x - data.la.x) * shotBox.width);
+    var lx = (data.lb.x - data.la.x) * shotBox.width;
+    var ly = (data.lb.y - data.la.y) * shotBox.height;
     var l = Math.sqrt(Math.pow(lx, 2) + Math.pow(ly, 2));
-    dial.lc.e.style.left = 100 * ((handle.la.x + handle.lb.x) / 2 - (Math.abs(m) < 1 ? ly : -ly) * 0.05 / l) + "%";
-    dial.lc.e.style.top = 100 * ((handle.la.y + handle.lb.y) / 2 + (Math.abs(m) < 1 ? lx : -lx) * 0.05 / l) + "%";
+    dial.lc.style.left = 100 * ((data.la.x + data.lb.x) / 2 - (Math.abs(m) < 1 ? ly : -ly) * 0.05 / l) + "%";
+    dial.lc.style.top = 100 * ((data.la.y + data.lb.y) / 2 + (Math.abs(m) < 1 ? lx : -lx) * 0.05 / l) + "%";
 
     updatePalette();
 }
 
 function updateDial() {
-    dial[this.id].c = bound(Math.round(this.value), this.min, this.max);
-    this.value = dial[this.id].c;
-    dial[this.id].f(true);
+    data[this.id].c = bound(Math.round(this.value), this.min, this.max);
+    this.value = data[this.id].c;
+    data[this.id].f(true);
 }
 
 /* move listeners */
 
-function grabEnd(e) {
+function grabEnd() {
     document.documentElement.classList.remove("moving");
     window.removeEventListener("mousemove", grabMove);
     window.removeEventListener("touchmove", grabMove);
@@ -249,19 +257,16 @@ function grabEnd(e) {
 
 function grabMove(e) {
     var mouse = getPointer(e);
-
-    handle[id].x = bound((mouse.x - imgrect.x) / imgrect.width, 0, 1);
-    handle[id].y = bound((mouse.y - imgrect.y) / imgrect.height, 0, 1);
-
-    handle[id].e.style.left = 100 * handle[id].x + "%";
-    handle[id].e.style.top = 100 * handle[id].y + "%";
-
-    handle[id].f();
+    data[id].x = bound((mouse.x - shotBox.x) / shotBox.width, 0, 1);
+    data[id].y = bound((mouse.y - shotBox.y) / shotBox.height, 0, 1);
+    handle[id].style.left = 100 * data[id].x + "%";
+    handle[id].style.top = 100 * data[id].y + "%";
+    data[id].f();
 }
 
 function grabStart(e) {
     id = this.id;
-    imgrect = image.getBoundingClientRect();
+    shotBox = shot.getBoundingClientRect();
     grabMove(e);
     if (e.isTrusted) {
         document.documentElement.classList.add("moving");
@@ -274,8 +279,8 @@ function grabStart(e) {
 
 /* image loading */
 
-function updateImgRect() {
-    imgrect = image.getBoundingClientRect();
+function updateShotBox() {
+    shotBox = shot.getBoundingClientRect();
     updateGrid();
     updateLine();
     // updatePreview();
@@ -295,8 +300,8 @@ function valid() {
     context.crossOrigin = "anonymous";
     context.drawImage(this, 0, 0);
     try {
-        imgdata = context.getImageData(0, 0, this.width, this.height);
-        image.src = this.src;
+        shotData = context.getImageData(0, 0, this.width, this.height);
+        shot.src = this.src;
     }
     catch (e) {
         console.log(e);
@@ -324,158 +329,51 @@ function loadFile() {
     }
 }
 
-function onResize(e) {
-    // img.width = innerWidth;
-    
-}
-
 /* initialization */
 
 function initSample() {
-    function pD() {}
-
-    handle.ga.x = 0.282;
-    handle.ga.y = 0.171;
-    handle.gb.x = 0.758;
-    handle.gb.y = 0.786;
-    handle.la.x = 0.9;
-    handle.la.y = 0.11;
-    handle.lb.x = 0.9;
-    handle.lb.y = 0.9;
-
-    handle.ga.e.style.left = 100 * handle.ga.x + "%";
-    handle.ga.e.style.top = 100 * handle.ga.y + "%";
-    handle.gb.e.style.left = 100 * handle.gb.x + "%";
-    handle.gb.e.style.top = 100 * handle.gb.y + "%";
-    handle.la.e.style.left = 100 * handle.la.x + "%";
-    handle.la.e.style.top = 100 * handle.la.y + "%";
-    handle.lb.e.style.left = 100 * handle.lb.x + "%";
-    handle.lb.e.style.top = 100 * handle.lb.y + "%";
-
-    dial.gc.e.dispatchEvent(new InputEvent("change"));
-    dial.lc.e.dispatchEvent(new InputEvent("change"));
-
-    loader.url.e.value = "sample.jpg";
-    loader.url.e.dispatchEvent(new InputEvent("change"));
-}
-
-var pk;
-function init() {
-    image = document.getElementById("image");
-    gcBound = document.getElementById("gc-bound");
-    grid = document.getElementById("grid");
-    line = document.getElementById("line");
-    handle = {
-        ga: {e: document.getElementById("ga"), f: updateGrid},
-        gb: {e: document.getElementById("gb"), f: updateGrid},
-        la: {e: document.getElementById("la"), f: updateLine},
-        lb: {e: document.getElementById("lb"), f: updateLine},
-    };
-    dial = {
-        gc: {e: document.getElementById("gc"), f: updateGrid},
-        lc: {e: document.getElementById("lc"), f: updateLine}
-    };
-    loader = {
-        file: {e: document.getElementById("load-file"), f: loadFile},
-        url: {e: document.getElementById("load-url"), f: loadURL}
-    };
-    preview = document.getElementById("preview");
-    palette = document.getElementById("palette");
-    output = document.getElementById("output");
-
-    // grid.addEventListener("click", function (e) {
-    //     pk = e.target;
-    // });
-    image.addEventListener("load", updateImgRect);
     for (var id in handle) {
-        handle[id].e.addEventListener("mousedown", grabStart);
-        handle[id].e.addEventListener("touchstart", grabStart);
+        handle[id].style.left = 100 * data[id].x + "%";
+        handle[id].style.top = 100 * data[id].y + "%";
     }
     for (var id in dial) {
-        dial[id].e.addEventListener("change", updateDial);
+        // dial[id].value = data[id].c; // redundant
+        dial[id].dispatchEvent(new InputEvent("change"));
     }
-    for (var id in loader) {
-        loader[id].e.addEventListener("change", loader[id].f);
+    urlLoader.value = "sample.jpg";
+    urlLoader.dispatchEvent(new InputEvent("change"));
+}
+
+function init() {
+    shot = document.getElementById("shot");
+    handle.ga = document.getElementById("ga");
+    handle.gb = document.getElementById("gb");
+    dial.gc = document.getElementById("gc");
+    gcBound = document.getElementById("gc-bound");
+    grid = document.getElementById("grid");
+    handle.la = document.getElementById("la");
+    handle.lb = document.getElementById("lb");
+    dial.lc = document.getElementById("lc");
+    line = document.getElementById("line");
+    fileLoader = document.getElementById("load-file");
+    errorLoader = document.getElementById("load-error");
+    urlLoader = document.getElementById("load-url");
+    preview = document.getElementById("preview");
+    palette = document.getElementById("palette");
+    result = document.getElementById("result");
+
+    shot.addEventListener("load", updateShotBox);
+    for (var id in handle) {
+        handle[id].addEventListener("mousedown", grabStart);
+        handle[id].addEventListener("touchstart", grabStart);
     }
-    // window.addEventListener("resize", onResize);
+    for (var id in dial) {
+        dial[id].addEventListener("change", updateDial);
+    }
+    fileLoader.addEventListener("change", loadFile);
+    urlLoader.addEventListener("change", loadURL);
 
     initSample();
 }
 
 window.addEventListener("DOMContentLoaded", init);
-
-
-// var paints = {
-//     " ": {r: 185, g: 174, b: 168},
-//     a: {r: 255, g: 255, b: 255},
-//     b: {r: 49, g: 36, b: 33},
-//     c: {r: 255, g: 211, b: 115},
-//     d: {r: 247, g: 105, b: 90},
-//     e: {r: 115, g: 130, b: 255},
-//     f: {r: 255, g: 215, b: 198},
-//     g: {r: 90, g: 40, b: 66},
-//     h: {r: 82, g: 56, b: 90},
-//     i: {r: 82, g: 97, b: 165}
-// };
-
-// function getClosestPaint(r, g, b) {
-//     var minpid;
-//     var mindp = Infinity;
-//     for (var pid in paints) {
-//         var p = paints[pid];
-//         var dp = Math.pow(r - p.r, 2) + Math.pow(g - p.g, 2) + Math.pow(b - p.b, 2);
-//         if (dp < mindp) {
-//             minpid = pid;
-//             mindp = dp;
-//         }
-//     }
-//     return minpid;
-// }
-
-// var img = $("img");
-// // img.crossOrigin="anonymous";
-// var canvas = document.createElement("canvas");
-// canvas.width = img.width;
-// canvas.height = img.height;
-// var context = canvas.getContext("2d");
-// context.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-// // var rect = img.getBoundingClientRect();
-// // function getPercentPosition(e) {
-// //     console.log({
-// //         x: (e.x - rect.x) / (rect.width),
-// //         y: (e.y - rect.y) / (rect.height)
-// //     });
-// // }
-// // window.addEventListener("click", getPercentPosition);
-
-
-
-// var corners = [
-//     {x: 0.23469387755102042, y: 0.1717557251908397},
-//     {x: 0.8147153598281418, y: 0.7824427480916031}
-// ];
-
-// var gap = {
-//     x: canvas.width * (corners[1].x - corners[0].x) / 37,
-//     y: canvas.height * (corners[1].y - corners[0].y) / 22
-// };
-
-// var data = context.getImageData(
-//     Math.round(canvas.width * corners[0].x),
-//     Math.round(canvas.height * corners[0].y),
-//     Math.round(canvas.width * (corners[1].x - corners[0].x)),
-//     Math.round(canvas.height * (corners[1].y - corners[0].y))
-// );
-// var txt = "";
-// for (var y = gap.y / 2; y < data.height; y += gap.y) {
-//     txt += "|";
-//     for (var x = gap.x / 2; x < data.width; x += gap.x) {
-//         var i = 4 * (data.width * Math.round(y) + Math.round(x));
-//         txt += getClosestPaint(data.data[i], data.data[i + 1], data.data[i + 2]);
-//     }
-//     txt += "\n";
-// }
-
-// console.log(txt);
-// copy(txt);
