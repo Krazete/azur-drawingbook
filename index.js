@@ -1,25 +1,24 @@
-var handle = {};
-var dial = {};
-var data = {
+var shot, gcBound, grid, line; // editor elements
+var handle = {}; // editor draggable elements
+var dial = {}; // editor input elements
+var data = { // editor position data and callbacks
     ga: {f: updateGrid, x: 0.282, y: 0.171},
     gb: {f: updateGrid, x: 0.758, y: 0.786},
     gc: {f: updateGrid, c: 37, cBound: 37},
     la: {f: updateLine, x: 0.9, y: 0.11},
     lb: {f: updateLine, x: 0.9, y: 0.9},
-    lc: {f: updateLine, c: 9},
+    lc: {f: updateLine, c: 9}
 };
-
-var shot, gcBound, grid, line;
-var loader;
-var preview, palette, result;
+var fileLoader, errorLoader, urlLoader, preview, palette, result; // menu elements
+var shotData, shotBox; // image data and bounding rect
+var shotChanged = false;
 
 var id;
-var shotBox;
 var rayX, rayY;
 
 var txt;
 var colors = [];
-var shotData;
+
 
 /* helpers */
 
@@ -302,6 +301,7 @@ function valid() {
     try {
         shotData = context.getImageData(0, 0, this.width, this.height);
         shot.src = this.src;
+            shotChanged = true;
     }
     catch (e) {
         console.log(e);
@@ -331,17 +331,14 @@ function loadFile() {
 
 /* initialization */
 
-function initSample() {
-    for (var id in handle) {
-        handle[id].style.left = 100 * data[id].x + "%";
-        handle[id].style.top = 100 * data[id].y + "%";
+function initShot() {
+    if (shot.complete && shot.naturalWidth > 0) {
+        updateShot();
+        // updateShotBox(); // redundant?
     }
-    for (var id in dial) {
-        // dial[id].value = data[id].c; // redundant
-        dial[id].dispatchEvent(new InputEvent("change"));
+    else {
+        requestAnimationFrame(initShot);
     }
-    urlLoader.value = "sample.jpg";
-    urlLoader.dispatchEvent(new InputEvent("change"));
 }
 
 function init() {
@@ -362,18 +359,40 @@ function init() {
     palette = document.getElementById("palette");
     result = document.getElementById("result");
 
+    initShot();
     shot.addEventListener("load", updateShotBox);
     for (var id in handle) {
+        handle[id].style.left = 100 * data[id].x + "%";
+        handle[id].style.top = 100 * data[id].y + "%";
         handle[id].addEventListener("mousedown", grabStart);
         handle[id].addEventListener("touchstart", grabStart);
     }
     for (var id in dial) {
         dial[id].addEventListener("change", updateDial);
+        dial[id].dispatchEvent(new InputEvent("change"));
     }
     fileLoader.addEventListener("change", loadFile);
     urlLoader.addEventListener("change", loadURL);
+}
 
-    initSample();
+function resetInputs() { // negate input restoration upon history.back()
+    for (var id in dial) {
+        dial[id].value = data[id].c;
+    }
+    fileLoader.value = "";
+    urlLoader.value = "";
+    result.value = "";
+    updatePreview();
+}
+
+function holup(e) {
+    if (shotChanged) {
+        e.preventDefault();
+        e.returnValue = "Changes you made may not be saved.";
+        return e.returnValue;    
+    }
 }
 
 window.addEventListener("DOMContentLoaded", init);
+window.addEventListener("load", resetInputs);
+window.addEventListener("beforeunload", holup);
