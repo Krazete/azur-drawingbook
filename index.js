@@ -19,6 +19,7 @@ var rayX, rayY;
 var txt;
 var colors = [];
 
+var activeLoader; // active loader element
 
 /* helpers */
 
@@ -276,56 +277,82 @@ function grabStart(e) {
     }
 }
 
-/* image loading */
+/* loaders */
 
-function updateShotBox() {
+function errorShot(e) {
+    if (typeof e == "string") {
+        errorLoader.textContent = e;
+    }
+    else if (e.name) {
+        errorLoader.textContent = e.name;
+    }
+    else if (activeLoader) {
+        errorLoader.textContent = "Could not " + activeLoader.id.replace(/-/, " ") + ".";
+    }
+    errorLoader.classList.remove("hidden");
+    if (activeLoader) {
+        activeLoader.classList.add("invalid");
+    }
+    console.warn(e);
+}
+
+function updateShot() {
+    var img = (this && this.tagName == "IMG") ? this : shot;
+    var canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    var context = canvas.getContext("2d");
+    context.drawImage(img, 0, 0);
+    try {
+        shotData = context.getImageData(0, 0, canvas.width, canvas.height);
+        if (shot.src != img.src) {
+            shot.src = img.src;
+            shotChanged = true;
+        }
+        fileLoader.classList.remove("accepted");
+        urlLoader.classList.remove("accepted");
+        if (activeLoader) {
+            activeLoader.classList.remove("invalid");
+            activeLoader.classList.add("accepted");
+        }
+        errorLoader.classList.add("hidden");
+    }
+    catch (e) {
+        errorShot(e);
+    }
+}
+
+function updateShotBox() { // todo: figure out when to call this (zoom? img load? on grabStart?)
     shotBox = shot.getBoundingClientRect();
     updateGrid();
     updateLine();
-    // updatePreview();
-}
-
-function invalid() {
-    this.classList.add("invalid");
-    console.log(this);
-}
-
-function valid() {
-    // this.classList.remove("invalid");
-    var canvas = document.createElement("canvas");
-    canvas.width = this.width;
-    canvas.height = this.height;
-    var context = canvas.getContext("2d");
-    context.crossOrigin = "anonymous";
-    context.drawImage(this, 0, 0);
-    try {
-        shotData = context.getImageData(0, 0, this.width, this.height);
-        shot.src = this.src;
-            shotChanged = true;
-    }
-    catch (e) {
-        console.log(e);
-    }
 }
 
 function loadURL() {
     var checker = new Image();
-    checker.crossOrigin = "Anonymous";
-    checker.addEventListener("load", valid);
-    checker.addEventListener("error", invalid);
-    checker.src = this.value || this.result;
+    if (this == urlLoader) {
+        activeLoader = this;
+        checker.crossOrigin = "anonymous"; // try url with cors first
+        checker.addEventListener("error", loadURL); // retry url without security
+    }
+    else {
+        checker.addEventListener("error", errorShot); // produces proper SecurityError message on url failure
+    }
+    checker.addEventListener("load", updateShot);
+    checker.src = this.result || urlLoader.value;
 }
 
 function loadFile() {
+    activeLoader = this;
     var file = this.files[0];
     if (file && file.type && file.type.startsWith("image/")) {
         var reader = new FileReader();
         reader.addEventListener("load", loadURL);
-        reader.addEventListener("error", invalid);
+        reader.addEventListener("error", errorShot);
         reader.readAsDataURL(file);
     }
     else {
-        invalid();
+        errorShot("Not an image.");
     }
 }
 
