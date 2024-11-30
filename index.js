@@ -13,12 +13,12 @@ var fileLoader, errorLoader, urlLoader, preview, palette, result; // menu elemen
 var shotData, shotBox; // image data and bounding rect
 var shotChanged = false;
 
-var id;
 var rayX, rayY;
 
 var txt;
 var colors = [];
 
+var activeId; // id of active handle element
 var activeLoader; // active loader element
 
 /* helpers */
@@ -257,15 +257,15 @@ function grabEnd() {
 
 function grabMove(e) {
     var mouse = getPointer(e);
-    data[id].x = bound((mouse.x - shotBox.x) / shotBox.width, 0, 1);
-    data[id].y = bound((mouse.y - shotBox.y) / shotBox.height, 0, 1);
-    handle[id].style.left = 100 * data[id].x + "%";
-    handle[id].style.top = 100 * data[id].y + "%";
-    data[id].f();
+    data[activeId].x = bound((mouse.x - shotBox.x) / shotBox.width, 0, 1);
+    data[activeId].y = bound((mouse.y - shotBox.y) / shotBox.height, 0, 1);
+    handle[activeId].style.left = 100 * data[activeId].x + "%";
+    handle[activeId].style.top = 100 * data[activeId].y + "%";
+    data[activeId].f();
 }
 
 function grabStart(e) {
-    id = this.id;
+    activeId = this.id;
     shotBox = shot.getBoundingClientRect();
     grabMove(e);
     if (e.isTrusted) {
