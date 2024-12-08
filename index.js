@@ -361,11 +361,18 @@ function loadFile() {
 function initShot() {
     if (shot.complete && shot.naturalWidth > 0) {
         updateShot();
-        // updateShotBox(); // redundant?
+        updateShotBox();
+        initShotListeners();
     }
     else {
         requestAnimationFrame(initShot);
     }
+}
+
+function initShotListeners() {
+    shot.removeEventListener("load", initShot);
+    shot.removeEventListener("error", initShotListeners);
+    shot.addEventListener("load", updateShotBox);
 }
 
 function init() {
@@ -386,8 +393,8 @@ function init() {
     palette = document.getElementById("palette");
     result = document.getElementById("result");
 
-    initShot();
-    shot.addEventListener("load", updateShotBox);
+    shot.addEventListener("load", initShot);
+    shot.addEventListener("error", initShotListeners);
     for (var id in handle) {
         handle[id].style.left = 100 * data[id].x + "%";
         handle[id].style.top = 100 * data[id].y + "%";
