@@ -11,13 +11,9 @@ var data = { // editor position data and callbacks
 };
 var fileLoader, errorLoader, urlLoader, preview, palette, result; // menu elements
 var shotData, shotBox; // image data and bounding rect
-var shotChanged = false;
-
-var rayX, rayY;
-
-var txt;
-var colors = [];
-
+var shotChanged = false; // whether an image was successfully loaded
+var oldRayX, oldRayY; // to prevent unnecessary calls to updateLine
+var colors = []; // the palette; {r, g, b, a} in [0, 256); {c} in [0, #colors)
 var activeId; // id of active handle element
 var activeLoader; // active loader element
 
@@ -55,9 +51,10 @@ function updatePreview() {
     var w0 = shotData.width * Math.abs(data.gb.x - data.ga.x);
     var h0 = shotData.height * Math.abs(data.gb.y - data.ga.y);
 
-    txt = "{{DrawingBook\n";
-    for (var c in colors) {
-        txt += "|" + String.fromCharCode(colors[c].c + 97) + "=rgb(" + [colors[c].r, colors[c].g, colors[c].b].join(", ") + ")\n";
+    var histogram = Array(colors.length).fill(0);
+    var txt = "{{DrawingBook\n";
+    for (var c of colors) {
+        txt += "|" + String.fromCharCode(c.c + 97) + "=rgb(" + [c.r, c.g, c.b].join(", ") + ")\n";
     }
     var newdata = context.createImageData(data.gc.cBound, data.gc.r);
     for (var r = 0; r < data.gc.r; r++) {
@@ -83,15 +80,18 @@ function updatePreview() {
             newdata.data[4 * j + 1] = closestColor.g;
             newdata.data[4 * j + 2] = closestColor.b;
             newdata.data[4 * j + 3] = closestColor.a;
-            txt += String.fromCharCode(closestColor.c + 97);
             if (colors.includes(closestColor)) {
-                palette.children[colors.indexOf(closestColor)].innerHTML = parseInt(palette.children[colors.indexOf(closestColor)].innerHTML || 0) + 1;
+                histogram[colors.indexOf(closestColor)]++;
             }
+            txt += String.fromCharCode(closestColor.c + 97);
+        }
+        for (var c of colors) {
+            palette.children[c.c].innerHTML = histogram[c.c];
         }
         txt += "\n";
     }
-    txt += "}}\n";
     context.putImageData(newdata, 0, 0);
+    txt += "}}\n";
     result.value = txt;
 }
 
@@ -134,7 +134,7 @@ function updatePalette() {
             c: c
         };
     }
-    palette.innerHTML = colors.map(e => "<div style=\"background:rgba(" + [e.r, e.g, e.b, e.a].join(",") + ")\"></div>").join("");
+    palette.innerHTML = colors.map(c => "<div style=\"background:rgba(" + [c.r, c.g, c.b, c.a].join(",") + ")\"></div>").join("");
     updatePreview();
 }
 
@@ -206,18 +206,14 @@ function updateGrid() {
 function updateLine(force) {
     if (!shotBox) {
         return;
-    }
-    var oldRayX = rayX;
-    var oldRayY = rayY;
-
-    rayX = data.la.x < data.lb.x;
-    rayY = data.la.y < data.lb.y;
-    
+    }    
     line.style.left = 100 * Math.min(data.la.x, data.lb.x) + "%";
     line.style.top = 100 * Math.min(data.la.y, data.lb.y) + "%";
     line.style.width = 100 * Math.abs(data.lb.x - data.la.x) + "%";
     line.style.height = 100 * Math.abs(data.lb.y - data.la.y) + "%";
 
+    var rayX = data.la.x < data.lb.x;
+    var rayY = data.la.y < data.lb.y;
     if (force || oldRayX != rayX || oldRayY != rayY) {
         var nM1 = data.lc.c - 1;
         line.innerHTML = "";
@@ -228,6 +224,8 @@ function updateLine(force) {
             line.appendChild(letter);
         }
     }
+    oldRayX = rayX;
+    oldRayY = rayY;
 
     var m = ((data.lb.y - data.la.y) * shotBox.height) / ((data.lb.x - data.la.x) * shotBox.width);
     var lx = (data.lb.x - data.la.x) * shotBox.width;
