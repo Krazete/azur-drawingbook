@@ -370,7 +370,6 @@ function initShot() {
 }
 
 function initShotListeners() {
-    shot.removeEventListener("load", initShot);
     shot.removeEventListener("error", initShotListeners);
     shot.addEventListener("load", updateShotBox);
 }
@@ -393,7 +392,7 @@ function init() {
     palette = document.getElementById("palette");
     result = document.getElementById("result");
 
-    shot.addEventListener("load", initShot);
+    initShot();
     shot.addEventListener("error", initShotListeners);
     for (var id in handle) {
         handle[id].style.left = 100 * data[id].x + "%";
