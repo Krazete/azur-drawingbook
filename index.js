@@ -142,8 +142,11 @@ function updatePalette() {
     var y0 = shotData.height * data.la.y;
     var w0 = shotData.width * (data.lb.x - data.la.x);
     var h0 = shotData.height * (data.lb.y - data.la.y);
-    var pad = bound(Math.floor(Math.max(w0, h0) / data.lc.c / 2), 0, 13); /* for color consistency; sucks for small swatches tho */
-    /* might be better unbounded */
+    var pad = bound(
+        Math.floor(Math.max(Math.abs(w0), Math.abs(h0)) / data.lc.c / 2), /* for color consistency; sucks for small swatches tho */
+        0,
+        13 /* usually better unbounded tbh */
+    );
 
     colors = [];
     for (var c = 0; c < data.lc.c; c++) {
