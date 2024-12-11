@@ -38,7 +38,7 @@ function getPointer(e) {
 }
 
 function getColor(x, y, pad) {
-    var hexcount = {}; /* histogram of rgba color values in hexadecimal format */
+    var hexcount = {}; // histogram of rgba color values in hexadecimal format
     for (var r = y - pad; r <= y + pad; r++) {
         for (var c = x - pad; c <= x + pad; c++) {
             if (r >= 0 && r < shotData.height && c >= 0 && c < shotData.width) {
@@ -55,7 +55,7 @@ function getColor(x, y, pad) {
         }
     }
     var hexes = Object.keys(hexcount);
-    hexes.sort((a, b) => hexcount[b] - hexcount[a]); /* to(olazyto)do: average highest count ties */
+    hexes.sort((a, b) => hexcount[b] - hexcount[a]); // to(olazyto)do: return average for highest count ties
     var hex = hexes[0];
     return {
         r: Math.floor(hex / 16777216),
@@ -143,8 +143,8 @@ function updatePalette() {
     var w0 = shotData.width * (data.lb.x - data.la.x);
     var h0 = shotData.height * (data.lb.y - data.la.y);
     var pad = Math.min(
-        Math.floor(Math.max(Math.abs(w0), Math.abs(h0)) / data.lc.c / 2), /* for color consistency; sucks for small swatches tho */
-        13 /* usually better unbounded tbh */
+        Math.floor(Math.max(Math.abs(w0), Math.abs(h0)) / data.lc.c / 2), // for color consistency; sucks for small swatches tho
+        13 // usually better unbounded tbh
     );
 
     colors = [];
@@ -340,7 +340,7 @@ function updateShot() {
     }
 }
 
-function updateShotBox() { // todo: figure out when to call this (zoom? img load? on grabStart?)
+function updateShotBox() {
     shotBox = shot.getBoundingClientRect();
     updateGrid();
     updateLine();
