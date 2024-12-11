@@ -68,6 +68,7 @@ This particular example was taken from painting Nº 7 of the [Happy Lunar New Ye
 
 1. Select an image via file upload or URL.
    - Some URLs may be denied due to Cross-Origin Resource Sharing policy. For these cases, download the image and upload it instead.
+   > The URL input also accepts images drag-and-dropped from other websites.
 2. Drag the yellow handles to opposite corners of the pixel grid.
    > Any orientation works. The handles can move around each other without issue.
 3. Scrub the yellow box to reflect the number of pixel grid columns.

@@ -392,6 +392,20 @@ function initShotListeners() {
     shot.addEventListener("load", updateShotBox);
 }
 
+function dropImage(e) {
+    var dtdiv = document.createElement("div");
+    dtdiv.innerHTML = e.dataTransfer.getData("text/html");
+    if (dtdiv.children.length && dtdiv.children[0].src) {
+        e.stopPropagation();
+        e.preventDefault(); 
+        this.value = dtdiv.children[0].src;
+        this.dispatchEvent(new InputEvent("change"));
+    }
+    else {
+        console.warn("Not an image element.", dtdiv);
+    }
+}
+
 function init() {
     shot = document.getElementById("shot");
     handle.ga = document.getElementById("ga");
@@ -424,6 +438,7 @@ function init() {
     }
     fileLoader.addEventListener("change", loadFile);
     urlLoader.addEventListener("change", loadURL);
+    urlLoader.addEventListener("drop", dropImage);
 }
 
 function resetInputs() { // negate input restoration upon history.back()
