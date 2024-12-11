@@ -37,6 +37,34 @@ function getPointer(e) {
     };
 }
 
+function getColor(x, y, pad) {
+    var hexcount = {}; /* histogram of rgba color values in hexadecimal format */
+    for (var r = y - pad; r <= y + pad; r++) {
+        for (var c = x - pad; c <= x + pad; c++) {
+            if (r >= 0 && r < shotData.height && c >= 0 && c < shotData.width) {
+                var i = shotData.width * r + c;
+                var hex = shotData.data[4 * i] * 16777216
+                        + shotData.data[4 * i + 1] * 65536
+                        + shotData.data[4 * i + 2] * 256
+                        + shotData.data[4 * i + 3];
+                if (!(hex in hexcount)) {
+                    hexcount[hex] = 0;
+                }
+                hexcount[hex]++;
+            }
+        }
+    }
+    var hexes = Object.keys(hexcount);
+    hexes.sort((a, b) => hexcount[b] - hexcount[a]); /* to(olazyto)do: average highest count ties */
+    var hex = hexes[0];
+    return {
+        r: Math.floor(hex / 16777216),
+        g: Math.floor(hex / 65536) % 256,
+        b: Math.floor(hex / 256) % 256,
+        a: hex % 256
+    };
+}
+
 /* menu updaters */
 
 function updatePreview() {
@@ -54,7 +82,7 @@ function updatePreview() {
     var histogram = Array(colors.length).fill(0);
     var txt = "{{DrawingBook\n";
     for (var c of colors) {
-        txt += "|" + String.fromCharCode(c.c + 97) + "=rgb(" + [c.r, c.g, c.b].join(", ") + ")\n";
+        txt += "|" + c.letter + "=rgb(" + [c.r, c.g, c.b].join(", ") + ")\n";
     }
     var newdata = context.createImageData(data.gc.cBound, data.gc.r);
     for (var r = 0; r < data.gc.r; r++) {
@@ -62,14 +90,8 @@ function updatePreview() {
         for (var c = 0; c < data.gc.cBound; c++) {
             var x = Math.round(x0 + w0 * (c + 0.5) / data.gc.cBound);
             var y = Math.round(y0 + h0 * (r + 0.5) / data.gc.r);
-            var i = shotData.width * y + x;
             var j = data.gc.cBound * r + c;
-            var thisColor = {
-                r: shotData.data[4 * i],
-                g: shotData.data[4 * i + 1],
-                b: shotData.data[4 * i + 2],
-                a: shotData.data[4 * i + 3]
-            };
+            var thisColor = getColor(x, y, 1);
             if (colors.length) {
                 var closestColor = getPaletteColor(thisColor);
             }
@@ -79,14 +101,14 @@ function updatePreview() {
             newdata.data[4 * j] = closestColor.r;
             newdata.data[4 * j + 1] = closestColor.g;
             newdata.data[4 * j + 2] = closestColor.b;
-            newdata.data[4 * j + 3] = closestColor.a;
+            newdata.data[4 * j + 3] = closestColor.letter == " " ? 0 : 255;
             if (colors.includes(closestColor)) {
                 histogram[colors.indexOf(closestColor)]++;
             }
-            txt += String.fromCharCode(closestColor.c + 97);
+            txt += closestColor.letter;
         }
-        for (var c of colors) {
-            palette.children[c.c].innerHTML = histogram[c.c];
+        for (var i in colors) {
+            palette.children[i].innerHTML = histogram[i];
         }
         txt += "\n";
     }
@@ -110,7 +132,7 @@ function getPaletteColor(k) {
     }
     var tolerance = 32;
     if (score > 4 * Math.pow(tolerance, 2)) {
-        chosen = {r: 0, g: 0, b: 0, a: 0, c: -65};
+        chosen = {r: 0, g: 0, b: 0, a: 0, letter: " "};
     }
     return chosen;
 }
@@ -125,16 +147,10 @@ function updatePalette() {
     for (var c = 0; c < data.lc.c; c++) {
         var x = Math.round(x0 + w0 * c / (data.lc.c - 1));
         var y = Math.round(y0 + h0 * c / (data.lc.c - 1));
-        var i = shotData.width * y + x;
-        colors[c] = {
-            r: shotData.data[4 * i],
-            g: shotData.data[4 * i + 1],
-            b: shotData.data[4 * i + 2],
-            a: shotData.data[4 * i + 3],
-            c: c
-        };
+        colors[c] = getColor(x, y, 13);
+        colors[c].letter = String.fromCharCode(c + 97);
     }
-    palette.innerHTML = colors.map(c => "<div style=\"background:rgba(" + [c.r, c.g, c.b, c.a].join(",") + ")\"></div>").join("");
+    palette.innerHTML = colors.map(c => "<div style=\"background:rgb(" + [c.r, c.g, c.b].join(",") + ")\"></div>").join("");
     updatePreview();
 }
 
@@ -412,7 +428,6 @@ function resetInputs() { // negate input restoration upon history.back()
     }
     fileLoader.value = "";
     urlLoader.value = "";
-    result.value = "";
     updatePreview();
 }
 
