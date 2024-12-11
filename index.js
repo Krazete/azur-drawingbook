@@ -142,12 +142,14 @@ function updatePalette() {
     var y0 = shotData.height * data.la.y;
     var w0 = shotData.width * (data.lb.x - data.la.x);
     var h0 = shotData.height * (data.lb.y - data.la.y);
+    var pad = bound(Math.floor(Math.max(w0, h0) / data.lc.c / 2), 0, 13); /* for color consistency; sucks for small swatches tho */
+    /* might be better unbounded */
 
     colors = [];
     for (var c = 0; c < data.lc.c; c++) {
         var x = Math.round(x0 + w0 * c / (data.lc.c - 1));
         var y = Math.round(y0 + h0 * c / (data.lc.c - 1));
-        colors[c] = getColor(x, y, 13);
+        colors[c] = getColor(x, y, pad);
         colors[c].letter = String.fromCharCode(c + 97);
     }
     palette.innerHTML = colors.map(c => "<div style=\"background:rgb(" + [c.r, c.g, c.b].join(",") + ")\"></div>").join("");
