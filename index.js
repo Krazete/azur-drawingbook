@@ -142,9 +142,8 @@ function updatePalette() {
     var y0 = shotData.height * data.la.y;
     var w0 = shotData.width * (data.lb.x - data.la.x);
     var h0 = shotData.height * (data.lb.y - data.la.y);
-    var pad = bound(
+    var pad = Math.min(
         Math.floor(Math.max(Math.abs(w0), Math.abs(h0)) / data.lc.c / 2), /* for color consistency; sucks for small swatches tho */
-        0,
         13 /* usually better unbounded tbh */
     );
 
@@ -207,7 +206,7 @@ function updateGrid() {
     }
 
     dial.gc.style.left = 100 * ((data[l].x + data[r].x) / 2) + "%";
-    dial.gc.style.top = 100 * (data[t].y - 0.05) + "%";
+    dial.gc.style.top = 100 * Math.max(0, data[t].y - 0.05) + "%";
 
     if (data.gc.cBound == data.gc.c) {
         dial.gc.classList.remove("not-wide-enough");
@@ -252,8 +251,8 @@ function updateLine(force) {
     var lx = (data.lb.x - data.la.x) * shotBox.width;
     var ly = (data.lb.y - data.la.y) * shotBox.height;
     var l = Math.sqrt(Math.pow(lx, 2) + Math.pow(ly, 2));
-    dial.lc.style.left = 100 * ((data.la.x + data.lb.x) / 2 - (Math.abs(m) < 1 ? ly : -ly) * 0.05 / l) + "%";
-    dial.lc.style.top = 100 * ((data.la.y + data.lb.y) / 2 + (Math.abs(m) < 1 ? lx : -lx) * 0.05 / l) + "%";
+    dial.lc.style.left = 100 * bound((data.la.x + data.lb.x) / 2 - (Math.abs(m) < 1 ? ly : -ly) * 0.05 / l, 0, 1) + "%";
+    dial.lc.style.top = 100 * bound((data.la.y + data.lb.y) / 2 + (Math.abs(m) < 1 ? lx : -lx) * 0.05 / l, 0, 1) + "%";
 
     updatePalette();
 }
