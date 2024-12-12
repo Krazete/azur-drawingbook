@@ -16,6 +16,7 @@ var oldRayX, oldRayY; // to prevent unnecessary calls to updateLine
 var colors = []; // the palette; {r, g, b, a} in [0, 256); {c} in [0, #colors)
 var activeId; // id of active handle element
 var activeLoader; // active loader element
+var tolerance = 16; // color closeness factor for getPaletteColor
 
 /* helpers */
 
@@ -130,7 +131,6 @@ function getPaletteColor(k) {
             chosen = c;
         }
     }
-    var tolerance = 32;
     if (score > 4 * Math.pow(tolerance, 2)) {
         chosen = {r: 0, g: 0, b: 0, a: 0, letter: " "};
     }
