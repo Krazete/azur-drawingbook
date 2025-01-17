@@ -2,6 +2,9 @@
 
 A [DrawingBook](https://azurlane.koumakan.jp/wiki/Template:DrawingBook) template generator for [Azur Lane Wiki](https://azurlane.koumakan.jp/).
 
+I made this before I thought about looking in [AzurLaneData](https://github.com/AzurLaneTools/AzurLaneData).  
+This has been rendered somewhat useless after writing [builddrawingbook.py](https://github.com/Krazete/azur-wiki/blob/main/builddrawingbook.py).
+
 ## What It Does
 
 It takes an image like this:
